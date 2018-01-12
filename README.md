@@ -9,4 +9,32 @@
 
 
 
-A command-line app illustrating use of Forge Reality Capture API to get an OBJ from collection of jpg images.
+`recap_cli` is a simple command-line app illustrating use of Forge Reality
+Capture API to get an OBJ from collection of jpg images.
+
+
+## Setup
+
+Grab the latest binary from the [releases](https://github.com/apprentice3d/recap_cli/releases) page and place it into directory listed in ```$PATH```,
+or if you have Go already setup, run
+
+    go get -u github.com/apprentice3d/recap_cli
+
+Set the ```FORGE_CLIENT_ID``` and ```FORGE_CLIENT_SECRET``` environment
+variables with your Forge secrets.
+
+## Usage
+
+To start use the app either using command-line go to folder containing
+the images needed to be processed and just run
+
+    $recap_cli
+
+or run `recap_cli` followed by the folder in which your images resides
+
+    $recap_cli ./sample_files
+
+If everything is setup, you should see the result as in following
+screenshot and a `result.zip` located in your working directory:
+
+![](./docs/resources/screen_01.png)
