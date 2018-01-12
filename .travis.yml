@@ -12,17 +12,14 @@ script:
 - test -z $(gofmt -s -l $GO_FILES)
 - go vet ./...
 - golint -set_exit_status $(go list ./...)
-
-after_success:
-- GOOS=linux GOARCH=arm go build -v bin/recap_cli_linux
-- GOOS=windows GOARCH=amd64 go build -v bin/recap_cli.exe
-- GOOS=darwin GOARCH=amd64 go build -v bin/recap_cli_osx
-
+- env GOOS=linux GOARCH=amd64 go build -v -o ./bin/recap_cli_linux
+- env GOOS=windows GOARCH=amd64 go build -v -o ./bin/recap_cli.exe
+- env GOOS=darwin GOARCH=amd64 go build -v -o ./bin/recap_cli_osx
 deploy:
   provider: releases
   skip_cleanup: true
   api_key:
-    secure: HKrIqaYwN6peD4tUoFCW9FyAL2DaY63Zgu9TD9V3Tj5JwOxto/wvuvVaoZ9J0Saok20Rku6EGGxjG03l3gUgR8i7MIK+6uh3eZpovhP5wcXS7tcOl5cEg09d6jQmKSQuRlvXqF7sE0RInJQp3NMP255UWcDWysrwtcRgh807HO28sHiEzaevr92OI4qBPdQiXpGzFxi+NMpbm4kaDZFXyfm/Zm/Sh3Y52h1tU37M03XFSvlJ2uYz19OjspLHpzND24XrAYeVRWQIqxwOJjMpI6Ih0rbwVji76ssD2jMbwUfULdXtsiFhHx4OyxC5AfYcNmhOc1sUj0NPn8PLS8CiyNLXXuS7L2+4unbGA4WZ//xbO6UD9KfPlrh68/uY8JGC04KirjOdaQEZL9TSMWxOjyhzEr+6VLwaOqxJvBRJYkEJ+qegBVUdrJTelXwOE+n5CfSxF04v7HcRqVvsJAhe62Tw4xsHTiK49s1PBD79RW2X6+6mS1w0LTVmWzLXhOVj9qWsOMruElb5kUYhBCl7Iy2rBAjSSq3852/5W1SxRKXz4FAGSf7q2ADPVMG9j8eOlDxZY6Oeva5jKFNX8xOlaaixuGFbTNLmyMVhtRSbEiccvDVmiQZxmHarwMv0iQjkgYKG3Tps8exYe63sT5AuVk0/zxBGwwcyKwp9wjmAFjw=
+    secure: pTLhVYflSJUudFjKhedLqRUdHjrzUmutViJ+w9oDXUdhqt3Ph2tJTNKEiIdARi7sRYjUnvL2fXE9XwskaLlGI7T/r1ctlR73dD80jFwN6g0o++XT9klqaF4Mu33OVthcsgkkONeUJ6ovJJ9nYx8IeM6PbFr+AT4qFZt6/6g8L8GWL80oX+DouFqirLMRxnghZ2xQCCB4mYBLj75kx/zcMhMYiU05ZFBGyJivbr4CMF2OAF4khbrwVmZ9c43x2uMhX+/aTOCj1w5It8LBQUy6h9ynvqU0I6Mrd7lmOMExmvbPv0vs7x02CkZoOhzxxRxOzghNEJVBHSihlx+d1CyyM8LGDU7P1BCMDXNi4DqqV+61bp1vqxdBxqDrW9igFrhMAMsb7lSZ7gGhrUIxVUr9JzerbCTZXj3jFlqK5Vn/get2ZYkoQ/QQQFo3ODBo89iGY3VU+f+nkr7lNWz46p+kokgFgf5oR7Zn/miLqebSqdIksvvzkFQMYF1rVUJjhD5OSj8BXqEOa0mhxHPJR1ZhHCvWZXnp83bI2L29OdMfci7U61pcrsiTQM8UUg+Sq19AOsA+ZG6VVJG8Ho1FXRm1OI4emKB3gYa4AVChB6SWNBVCw2xQwqvY9N0M6yo0SyQb6zZYP9OTeWIfwT0di1Nu1RNLxYhKIDx76ZMLV6b7xLs=
   file:
   - bin/recap_cli_osx
   - bin/recap_cli_linux
