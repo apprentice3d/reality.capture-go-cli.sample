@@ -1,20 +1,17 @@
 package main
 
 import (
-	"log"
-	"os"
-
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-	"net/http"
-
-	"io"
 
 	"github.com/apprentice3d/forge-api-go-client/recap"
 )
