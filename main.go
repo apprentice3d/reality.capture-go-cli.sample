@@ -108,11 +108,11 @@ func main() {
 
 func downloadLink(link string) (err error) {
 	resp, err := http.Get(link)
-	defer resp.Body.Close()
+
 	if err != nil {
 		return
 	}
-
+	defer resp.Body.Close()
 	result, err := os.Create("result.zip")
 	defer result.Close()
 	if err != nil {
