@@ -3,51 +3,66 @@ package main
 import (
 	"log"
 	"os"
+
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
+
+	"net/http"
+
+	"io"
 
 	"github.com/apprentice3d/forge-api-go-client/recap"
 )
 
 func main() {
-	clientID := os.Getenv("FORGE_CLIENT_ID")
-	clientSecret := os.Getenv("FORGE_CLIENT_SECRET")
+
+	dir := "."
+
+	if len(os.Args) > 1 {
+		dir = os.Args[1]
+	}
+
+	images, err := getListOfJPGFilesFromPath(dir)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	fmt.Printf("Found %d jpg images.\n", len(images))
+
+	clientID, clientSecret, err := getCredentials()
+
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
 
 	recapAPI := recap.NewReCapAPIWithCredentials(clientID, clientSecret)
 
-	log.Print("Creating a scene ...")
+	fmt.Println("Creating a scene ...")
 	scene, err := recapAPI.CreatePhotoScene("example", []string{"obj"})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	log.Printf("Created a scene with id = %s\n", scene.ID)
+	fmt.Printf("Scene created: id = %s\n", scene.ID)
 
-	fileSamples := []string{
-		"https://s3.amazonaws.com/adsk-recap-public/forge/lion/DSC_1158.JPG",
-		"https://s3.amazonaws.com/adsk-recap-public/forge/lion/DSC_1159.JPG",
-		"https://s3.amazonaws.com/adsk-recap-public/forge/lion/DSC_1160.JPG",
-		"https://s3.amazonaws.com/adsk-recap-public/forge/lion/DSC_1162.JPG",
-		"https://s3.amazonaws.com/adsk-recap-public/forge/lion/DSC_1163.JPG",
-		"https://s3.amazonaws.com/adsk-recap-public/forge/lion/DSC_1164.JPG",
-		"https://s3.amazonaws.com/adsk-recap-public/forge/lion/DSC_1165.JPG",
-	}
-
-	log.Print("Uploading sample images ...")
-	uploadResults, err := recapAPI.AddFilesToScene(&scene, fileSamples)
+	fmt.Println("Uploading sample images ...standby...")
+	uploadResults, err := recapAPI.AddFilesToScene(&scene, images)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	for idx, result := range uploadResults {
-		log.Printf("[%d] Successfully uploaded: %s\n", idx, result.Files.File.FileName)
-	}
+	fmt.Printf("%d files where uploaded sucessfully\n", len(uploadResults))
 
-	log.Print("Starting scene processing ...")
+	fmt.Println("Starting scene processing ...")
 	if _, err = recapAPI.StartSceneProcessing(scene); err != nil {
 		log.Println(err.Error())
 	}
 
-	log.Print("Checking scene status ...")
+	fmt.Println("Checking scene status ...")
 	var progressResult recap.SceneProgressReply
 	var ratio float64
 	for {
@@ -57,7 +72,6 @@ func main() {
 		}
 
 		ratio, _ = strconv.ParseFloat(progressResult.PhotoScene.Progress, 64)
-
 		if err != nil {
 			log.Printf("Failed to parse progress results: %s\n", err.Error())
 			return
@@ -66,22 +80,80 @@ func main() {
 		if ratio == float64(100.0) {
 			break
 		}
-		log.Printf("\rScene progress = %.2f%% ... waiting 5 seconds", ratio)
+		fmt.Printf("\rScene progress = %.2f%%", ratio)
 		time.Sleep(5 * time.Second)
 	}
 
-	log.Print("\nFinished processing the scene, now getting the results ...")
+	fmt.Println("\nFinished processing the scene, now getting the results in obj format...")
 	result, err := recapAPI.GetSceneResults(scene, "obj")
 	if err != nil {
 		log.Println(err.Error())
 	}
-	log.Printf("Received the following link %s\n", result.PhotoScene.SceneLink)
 
-	log.Print("Deleting the scene ...")
+	fmt.Printf("Results are available at following link => %s\n", result.PhotoScene.SceneLink)
+	if err := downloadLink(result.PhotoScene.SceneLink); err != nil {
+		log.Println("WARNING: Could not download the provided link")
+	} else {
+		workDir, _ := os.Getwd()
+		fmt.Printf("File downloaded to %s as 'result.zip'\n", workDir)
+	}
 
+	fmt.Println("Deleting the scene ...")
 	_, err = recapAPI.DeleteScene(scene)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	log.Print("Scene deleted successfully!")
+	fmt.Println("Scene deleted successfully!")
+}
+
+func downloadLink(link string) (err error) {
+	resp, err := http.Get(link)
+	defer resp.Body.Close()
+	if err != nil {
+		return
+	}
+
+	result, err := os.Create("result.zip")
+	defer result.Close()
+	if err != nil {
+		return
+	}
+
+	_, err = io.Copy(result, resp.Body)
+
+	return
+}
+
+func getListOfJPGFilesFromPath(dir string) (images []string, err error) {
+	files, err := ioutil.ReadDir(dir)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		if !file.IsDir() {
+			if strings.Compare(strings.ToLower(filepath.Ext(file.Name())), ".jpg") == 0 {
+				images = append(images, filepath.Join(dir, file.Name()))
+			}
+		}
+	}
+
+	if len(images) == 0 {
+		err = errors.New("no valid images found for upload")
+	}
+
+	return
+}
+
+func getCredentials() (clientID string, clientSecret string, err error) {
+	clientID = os.Getenv("FORGE_CLIENT_ID")
+	clientSecret = os.Getenv("FORGE_CLIENT_SECRET")
+
+	if len(clientID) == 0 || len(clientSecret) == 0 {
+		err = errors.New("\nFORGE_CLIENT_ID and FORGE_CLIENT_SECRET env vars could not be found.\n" +
+			"We encourage using Forge secrets by specifying them as env variables.\nExiting ...")
+	}
+
+	return
 }
