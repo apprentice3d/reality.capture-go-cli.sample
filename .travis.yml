@@ -25,4 +25,5 @@ deploy:
   - bin/recap_cli_linux
   - bin/recap_cli.exe
   on:
+    tags: true
     repo: apprentice3d/recap_cli
