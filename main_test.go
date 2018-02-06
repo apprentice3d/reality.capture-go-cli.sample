@@ -23,7 +23,7 @@ func TestJPGFinding(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Could not open file: %s\n", image)
 		} else {
-			t.Logf("Image %s opened successfuly\n", image)
+			t.Logf("Image %s opened successfully\n", image)
 		}
 	}
 

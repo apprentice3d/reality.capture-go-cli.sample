@@ -52,7 +52,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	fmt.Printf("%d files where uploaded sucessfully\n", len(uploadResults))
+	fmt.Printf("%d files where uploaded successfully\n", len(uploadResults))
 
 	fmt.Println("Starting scene processing ...")
 	if _, err = recapAPI.StartSceneProcessing(scene); err != nil {
@@ -88,7 +88,7 @@ func main() {
 	}
 
 	fmt.Printf("Results are available at following link => %s\n", result.PhotoScene.SceneLink)
-	if err := downloadLink(result.PhotoScene.SceneLink); err != nil {
+	if err = downloadLink(result.PhotoScene.SceneLink); err != nil {
 		log.Println("WARNING: Could not download the provided link")
 	} else {
 		workDir, _ := os.Getwd()
@@ -105,16 +105,16 @@ func main() {
 
 func downloadLink(link string) (err error) {
 	resp, err := http.Get(link)
-
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
+
 	result, err := os.Create("result.zip")
-	defer result.Close()
 	if err != nil {
 		return
 	}
+	defer result.Close()
 
 	_, err = io.Copy(result, resp.Body)
 
