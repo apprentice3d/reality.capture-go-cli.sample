@@ -41,7 +41,7 @@ func main() {
 	recapAPI := recap.NewAPIWithCredentials(clientID, clientSecret)
 
 	fmt.Println("Creating a scene ...")
-	scene, err := recapAPI.CreatePhotoScene("example", []string{"obj", "rcm"}, "object")
+	scene, err := recapAPI.CreatePhotoScene("example", []string{"obj"}, "object")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -52,17 +52,11 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(len(images))
 	for idx, filename := range images {
-		go func(idx int, filename string) {
+		// parallel execution is possible by writing `go` in front of below function
+		func(idx int, filename string) {
 			defer wg.Done()
 			status := fmt.Sprintf("[%2d/%d] File %s ", idx+1, len(images), filename)
-			file, err := os.Open(filename)
-			if err != nil {
-				status += "failed to upload: " + err.Error()
-				log.Println(status)
-				return
-			}
-			defer file.Close()
-			data, err := ioutil.ReadAll(file)
+			data, err := ioutil.ReadFile(filename)
 			if err != nil {
 				status += "failed to upload: " + err.Error()
 				log.Println(status)
@@ -121,21 +115,6 @@ func main() {
 	} else {
 		workDir, _ := os.Getwd()
 		fmt.Printf("File downloaded to %s as 'result_obj.zip'\n", workDir)
-	}
-
-
-	fmt.Println("\nNow downloading the results in rcm format...")
-	result, err = recapAPI.GetSceneResults(scene.ID, "rcm")
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	fmt.Printf("Results are available at following link => %s\n", result.PhotoScene.SceneLink)
-	if err := downloadLink(result.PhotoScene.SceneLink, "result_rcm.zip"); err != nil {
-		log.Println("WARNING: Could not download the provided link")
-	} else {
-		workDir, _ := os.Getwd()
-		fmt.Printf("File downloaded to %s as 'result_rcm.zip'\n", workDir)
 	}
 
 	fmt.Println("Deleting the scene ...")
