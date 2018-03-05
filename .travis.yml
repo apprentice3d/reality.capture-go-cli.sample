@@ -9,12 +9,12 @@ before_script:
 - go get github.com/golang/lint/golint
 - go get github.com/apprentice3d/forge-api-go-client
 script:
-- test -z $(gofmt -s -l $GO_FILES)
+#- test -z $(gofmt -s -l $GO_FILES)
 - go vet ./...
 - golint -set_exit_status $(go list ./...)
-- env GOOS=linux GOARCH=amd64 go build -v -o ./bin/recap_cli_linux
-- env GOOS=windows GOARCH=amd64 go build -v -o ./bin/recap_cli.exe
-- env GOOS=darwin GOARCH=amd64 go build -v -o ./bin/recap_cli_osx
+- env GOOS=linux GOARCH=amd64 go build -v -o ./bin/linux/recap_cli
+- env GOOS=windows GOARCH=amd64 go build -v -o ./bin/windows/recap_cli.exe
+- env GOOS=darwin GOARCH=amd64 go build -v -o ./bin/osx/recap_cli
 - cd ./bin/linux && zip -r linux.zip .
 - cd ../../bin/windows && zip -r windows.zip .
 - cd ../../bin/osx && zip -r osx.zip .
