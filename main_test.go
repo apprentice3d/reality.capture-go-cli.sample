@@ -19,7 +19,7 @@ func TestJPGFinding(t *testing.T) {
 
 	for _, image := range images {
 		file, err := os.Open(image)
-		defer file.Close()
+		file.Close()
 		if err != nil {
 			t.Fatalf("Could not open file: %s\n", image)
 		} else {
