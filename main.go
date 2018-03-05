@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/apprentice3d/forge-api-go-client/recap"
+	"sync"
 )
 
 func main() {
@@ -37,10 +38,10 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-	recapAPI := recap.NewReCapAPIWithCredentials(clientID, clientSecret)
+	recapAPI := recap.NewAPIWithCredentials(clientID, clientSecret)
 
 	fmt.Println("Creating a scene ...")
-	scene, err := recapAPI.CreatePhotoScene("example", []string{"obj"})
+	scene, err := recapAPI.CreatePhotoScene("example", []string{"obj", "rcm"}, "object")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -48,14 +49,41 @@ func main() {
 	fmt.Printf("Scene created: id = %s\n", scene.ID)
 
 	fmt.Println("Uploading sample images ...standby...")
-	uploadResults, err := recapAPI.AddFilesToScene(&scene, images)
-	if err != nil {
-		log.Fatal(err.Error())
+	var wg sync.WaitGroup
+	wg.Add(len(images))
+	for idx, filename := range images {
+		go func(idx int, filename string) {
+			defer wg.Done()
+			status := fmt.Sprintf("[%2d/%d] File %s ", idx+1, len(images), filename)
+			file, err := os.Open(filename)
+			if err != nil {
+				status += "failed to upload: " + err.Error()
+				log.Println(status)
+				return
+			}
+			defer file.Close()
+			data, err := ioutil.ReadAll(file)
+			if err != nil {
+				status += "failed to upload: " + err.Error()
+				log.Println(status)
+				return
+			}
+			_, err = recapAPI.AddFileToSceneUsingData(scene.ID, data)
+			if err != nil {
+				status += "failed to upload: " + err.Error()
+				log.Println(status)
+				return
+			}
+			status += "uploaded successfully"
+			log.Println(status)
+
+		}(idx, filename)
 	}
-	fmt.Printf("%d files where uploaded sucessfully\n", len(uploadResults))
+
+	wg.Wait()
 
 	fmt.Println("Starting scene processing ...")
-	if _, err = recapAPI.StartSceneProcessing(scene); err != nil {
+	if _, err = recapAPI.StartSceneProcessing(scene.ID); err != nil {
 		log.Println(err.Error())
 	}
 
@@ -63,7 +91,7 @@ func main() {
 	var progressResult recap.SceneProgressReply
 	var ratio float64
 	for {
-		if progressResult, err = recapAPI.GetSceneProgress(scene); err != nil {
+		if progressResult, err = recapAPI.GetSceneProgress(scene.ID); err != nil {
 			log.Printf("Failed to get the PhotoScene progress: %s\n", err.Error())
 			return
 		}
@@ -82,39 +110,54 @@ func main() {
 	}
 
 	fmt.Println("\nFinished processing the scene, now getting the results in obj format...")
-	result, err := recapAPI.GetSceneResults(scene, "obj")
+	result, err := recapAPI.GetSceneResults(scene.ID, "obj")
 	if err != nil {
 		log.Println(err.Error())
 	}
 
 	fmt.Printf("Results are available at following link => %s\n", result.PhotoScene.SceneLink)
-	if err := downloadLink(result.PhotoScene.SceneLink); err != nil {
+	if err := downloadLink(result.PhotoScene.SceneLink, "result_obj.zip"); err != nil {
 		log.Println("WARNING: Could not download the provided link")
 	} else {
 		workDir, _ := os.Getwd()
-		fmt.Printf("File downloaded to %s as 'result.zip'\n", workDir)
+		fmt.Printf("File downloaded to %s as 'result_obj.zip'\n", workDir)
+	}
+
+
+	fmt.Println("\nNow downloading the results in rcm format...")
+	result, err = recapAPI.GetSceneResults(scene.ID, "rcm")
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	fmt.Printf("Results are available at following link => %s\n", result.PhotoScene.SceneLink)
+	if err := downloadLink(result.PhotoScene.SceneLink, "result_rcm.zip"); err != nil {
+		log.Println("WARNING: Could not download the provided link")
+	} else {
+		workDir, _ := os.Getwd()
+		fmt.Printf("File downloaded to %s as 'result_rcm.zip'\n", workDir)
 	}
 
 	fmt.Println("Deleting the scene ...")
-	_, err = recapAPI.DeleteScene(scene)
+	_, err = recapAPI.DeleteScene(scene.ID)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	fmt.Println("Scene deleted successfully!")
 }
 
-func downloadLink(link string) (err error) {
+func downloadLink(link, filename string) (err error) {
 	resp, err := http.Get(link)
 
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
-	result, err := os.Create("result.zip")
-	defer result.Close()
+	result, err := os.Create(filename)
 	if err != nil {
 		return
 	}
+	defer result.Close()
 
 	_, err = io.Copy(result, resp.Body)
 
