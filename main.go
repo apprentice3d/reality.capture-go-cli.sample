@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/apprentice3d/forge-api-go-client/recap"
-	"sync"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-	fmt.Printf("Found %d jpg images.\n", len(images))
+	log.Printf("Found %d jpg images.\n", len(images))
 
 	clientID, clientSecret, err := getCredentials()
 
@@ -40,15 +40,16 @@ func main() {
 
 	recapAPI := recap.NewAPIWithCredentials(clientID, clientSecret)
 
-	fmt.Println("Creating a scene ...")
+	log.Println("Creating a scene ...")
 	scene, err := recapAPI.CreatePhotoScene("example", []string{"obj"}, "object")
+	//scene, err := recapAPI.CreatePhotoScene("example", []string{"obj"}, "aerial")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	fmt.Printf("Scene created: id = %s\n", scene.ID)
+	log.Printf("Scene created: id = %s\n", scene.ID)
 
-	fmt.Println("Uploading sample images ...standby...")
+	log.Println("Uploading sample images ...standby...")
 	var wg sync.WaitGroup
 	wg.Add(len(images))
 	for idx, filename := range images {
@@ -76,12 +77,13 @@ func main() {
 
 	wg.Wait()
 
-	fmt.Println("Starting scene processing ...")
+	log.Println("Starting scene processing ...")
 	if _, err = recapAPI.StartSceneProcessing(scene.ID); err != nil {
 		log.Println(err.Error())
+		os.Exit(1)
 	}
 
-	fmt.Println("Checking scene status ...")
+	log.Println("Checking scene status ...")
 	var progressResult recap.SceneProgressReply
 	var ratio float64
 	for {
@@ -103,26 +105,44 @@ func main() {
 		time.Sleep(5 * time.Second)
 	}
 
-	fmt.Println("\nFinished processing the scene, now getting the results in obj format...")
+	log.Println("Finished processing the scene, now getting the results in obj format...")
 	result, err := recapAPI.GetSceneResults(scene.ID, "obj")
 	if err != nil {
 		log.Println(err.Error())
+		os.Exit(1)
 	}
 
-	fmt.Printf("Results are available at following link => %s\n", result.PhotoScene.SceneLink)
+	log.Printf("Results are available at following link => %s\n", result.PhotoScene.SceneLink)
 	if err := downloadLink(result.PhotoScene.SceneLink, "result_obj.zip"); err != nil {
 		log.Println("WARNING: Could not download the provided link")
 	} else {
 		workDir, _ := os.Getwd()
-		fmt.Printf("File downloaded to %s as 'result_obj.zip'\n", workDir)
+		log.Printf("File downloaded to %s as 'result_obj.zip'\n", workDir)
 	}
 
-	fmt.Println("Deleting the scene ...")
+	info, _ := os.Stat("result_obj.zip")
+	log.Printf("The download file has size %d", info.Size())
+
+	//fmt.Println("\nNow downloading the results in rcm format...")
+	//result, err = recapAPI.GetSceneResults(scene.ID, "rcm")
+	//if err != nil {
+	//	log.Println(err.Error())
+	//}
+	//
+	//fmt.Printf("Results are available at following link => %s\n", result.PhotoScene.SceneLink)
+	//if err := downloadLink(result.PhotoScene.SceneLink, "result_rcm.zip"); err != nil {
+	//	log.Println("WARNING: Could not download the provided link")
+	//} else {
+	//	workDir, _ := os.Getwd()
+	//	fmt.Printf("File downloaded to %s as 'result_rcm.zip'\n", workDir)
+	//}
+
+	log.Println("Deleting the scene ...")
 	_, err = recapAPI.DeleteScene(scene.ID)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	fmt.Println("Scene deleted successfully!")
+	log.Println("Scene deleted successfully!")
 }
 
 func downloadLink(link, filename string) (err error) {
