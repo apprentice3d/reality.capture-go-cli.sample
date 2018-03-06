@@ -1,5 +1,5 @@
 # recap_cli
-[![Build Status](https://travis-ci.org/apprentice3d/recap_cli.svg?branch=master)](https://travis-ci.org/apprentice3d/recap_cli)
+[![Build Status](https://travis-ci.org/apprentice3d/reality.capture-go-cli.sample.svg?branch=master)](https://travis-ci.org/apprentice3d/reality.capture-go-cli.sample)
 [![Go Report Card](https://goreportcard.com/badge/github.com/apprentice3d/recap_cli)](https://goreportcard.com/report/github.com/apprentice3d/recap_cli)
 ![Platforms](https://img.shields.io/badge/platform-windows%20%7C%20osx%20%7C%20linux-lightgray.svg)
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://opensource.org/licenses/MIT)
