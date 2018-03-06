@@ -30,4 +30,4 @@ deploy:
   - ./bin/osx/osx.zip
   on:
     tags: true
-    repo: apprentice3d/recap_cli
+    repo: apprentice3d/reality.capture-go-cli.sample
