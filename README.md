@@ -62,4 +62,4 @@ Forge Partner Development Team
 
 - Denis Grigor [@apprentice3d](https://twitter.com/apprentice3d)
 
-See more at [Forge blog](https://forge.autodesk.com/blog).
+See more at [Forge blog](https://forge.autodesk.com/blog/hitchhikers-guide-reality-capture-api).
